@@ -39,7 +39,7 @@ private:
     void CreateVertexBuffer();    
     void initMatrices();
 
-    void PrepareTexture(GLenum TextureTarget, const QString& FileName, GLuint& TexObject, bool flip);
+    void PrepareTexture(GLenum TextureUnit, GLenum TextureTarget, const QString& FileName, bool flip);
 
 protected:
     void resizeEvent(QResizeEvent *);

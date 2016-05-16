@@ -76,6 +76,8 @@ void MyWindow::initialize()
     CreateVertexBuffer();
     initShaders();
     initMatrices();
+    PrepareTexture(GL_TEXTURE0, GL_TEXTURE_2D, "../Media/brick1.jpg", false);
+
 
     glFrontFace(GL_CCW);
     glEnable(GL_DEPTH_TEST);
@@ -83,7 +85,7 @@ void MyWindow::initialize()
 
 void MyWindow::CreateVertexBuffer()
 {
-    // *** Teapot
+    // *** Cube
     mFuncs->glGenVertexArrays(1, &mVAOCube);
     mFuncs->glBindVertexArray(mVAOCube);
 
@@ -137,7 +139,7 @@ void MyWindow::resizeEvent(QResizeEvent *)
     mUpdateSize = true;
 
     ProjectionMatrix.setToIdentity();
-    ProjectionMatrix.perspective(70.0f, (float)this->width()/(float)this->height(), 0.3f, 100.0f);
+    ProjectionMatrix.perspective(60.0f, (float)this->width()/(float)this->height(), 0.3f, 100.0f);
 }
 
 void MyWindow::render()
@@ -179,7 +181,7 @@ void MyWindow::render()
         mProgram->setUniformValue("Light.Position",  worldLight );
         mProgram->setUniformValue("Light.Intensity", QVector3D(1.0f, 1.0f, 1.0f));
 
-        mProgram->setUniformValue("Material.Kd", 0.9f, 0.5f, 0.3f);
+        mProgram->setUniformValue("Material.Kd", 0.9f, 0.9f, 0.9f);
         mProgram->setUniformValue("Material.Ks", 0.95f, 0.95f, 0.95f);
         mProgram->setUniformValue("Material.Ka", 0.1f, 0.1f, 0.1f);
         mProgram->setUniformValue("Material.Shininess", 100.0f);
@@ -188,6 +190,8 @@ void MyWindow::render()
         mProgram->setUniformValue("ModelViewMatrix", mv1);
         mProgram->setUniformValue("NormalMatrix", mv1.normalMatrix());
         mProgram->setUniformValue("MVP", ProjectionMatrix * mv1);
+
+        mProgram->setUniformValue("Tex1", 0);
 
         glDrawElements(GL_TRIANGLES, 6 * mCube->getnFaces(), GL_UNSIGNED_INT, ((GLubyte *)NULL + (0)));
 
@@ -226,18 +230,22 @@ void MyWindow::initShaders()
     qDebug() << "shader link: " << mProgram->link();
 }
 
-void MyWindow::PrepareTexture(GLenum TextureTarget, const QString& FileName, GLuint& TexObject, bool flip)
+void MyWindow::PrepareTexture(GLenum TextureUnit, GLenum TextureTarget, const QString& FileName, bool flip)
 {
     QImage TexImg;
 
-    if (!TexImg.load(FileName)) qDebug() << "Erreur chargement texture";
+    if (!TexImg.load(FileName)) qDebug() << "Erreur chargement texture " << FileName;
     if (flip==true) TexImg=TexImg.mirrored();
 
+    glActiveTexture(TextureUnit);
+    GLuint TexObject;
     glGenTextures(1, &TexObject);
     glBindTexture(TextureTarget, TexObject);
-    glTexImage2D(TextureTarget, 0, GL_RGB, TexImg.width(), TexImg.height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, TexImg.bits());
-    glTexParameterf(TextureTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(TextureTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    mFuncs->glTexStorage2D(TextureTarget, 1, GL_RGB8, TexImg.width(), TexImg.height());
+    mFuncs->glTexSubImage2D(TextureTarget, 0, 0, 0, TexImg.width(), TexImg.height(), GL_BGRA, GL_UNSIGNED_BYTE, TexImg.bits());
+    //glTexImage2D(TextureTarget, 0, GL_RGB, TexImg.width(), TexImg.height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, TexImg.bits());
+    glTexParameteri(TextureTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(TextureTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 void MyWindow::keyPressEvent(QKeyEvent *keyEvent)
